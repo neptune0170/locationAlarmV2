@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:locationalarm/presentation/screens/Login/signup_page.dart';
+import '../presentation/screens/HomeScreen/AOT/group_event.dart';
 import '../presentation/screens/HomeScreen/Settings/appearance.dart';
 import '../presentation/screens/HomeScreen/Settings/notification_page.dart';
 import '../presentation/screens/Login/login_page.dart';
@@ -17,7 +18,8 @@ class Routes {
       '/accountInformation': (context) => AccountInformation(),
       '/appearance': (context) => Appearance(),
       '/volume': (context) => Volume(),
-      '/notificationPage': (context) => NotificationPage()
+      '/notificationPage': (context) => NotificationPage(),
+      '/groupEvent': (context) => GroupEvent()
     };
   }
 }

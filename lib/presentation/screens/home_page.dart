@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:locationalarm/presentation/screens/HomeScreen/Alarm/alarm_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:locationalarm/presentation/screens/HomeScreen/AOT/aot_page.dart';
+import 'package:locationalarm/presentation/screens/HomeScreen/AOT/aot_tracking_page.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/GeoFence/geo_fence_page.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/Schedule/schedule_page.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/Track/track_page.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/settings_page.dart';
-import 'package:geolocator/geolocator.dart';
+
+import '../../data/data_providers/auth_api_provider.dart'; // Assuming AuthApiProvider is in this path
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,36 +18,38 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  int _eventId = 0; // Global variable for eventId
   Position? _currentPosition;
-
-  static const List<Widget> _widgetOptions = <Widget>[
-    TrackPage(),
-    SchedulePage(),
-    AlarmPage(),
-    GeoFencePage(),
-    SettingsPage()
-  ];
 
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _fetchEventId(); // Fetch eventId when the app starts
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  // Fetch eventId from API and set it
+  Future<void> _fetchEventId() async {
+    try {
+      var userDetails = await AuthApiProvider().getUserDetails();
+      if (userDetails != null && userDetails.isNotEmpty) {
+        setState(() {
+          _eventId = userDetails[0]
+              ['eventId']; // Assuming eventId is part of user details
+        });
+      }
+    } catch (e) {
+      print('Error fetching eventId: $e');
+    }
   }
 
+  // Get the current location
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled, don't continue
       print('Location services are disabled.');
       return;
     }
@@ -53,20 +58,16 @@ class _HomePageState extends State<HomePage> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, don't continue
         print('Location permissions are denied');
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, don't continue
-      print(
-          'Location permissions are permanently denied, we cannot request permissions.');
+      print('Location permissions are permanently denied.');
       return;
     }
 
-    // Get the current location
     try {
       _currentPosition = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
@@ -74,6 +75,24 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       print("Error getting current location: $e");
     }
+  }
+
+  // Handle navigation bar item taps
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  // Conditionally return AOTPage or AotTrackingPage based on _eventId
+  List<Widget> get _widgetOptions {
+    return <Widget>[
+      TrackPage(),
+      SchedulePage(),
+      _eventId == 0 ? AotPage() : AotTrackingPage(),
+      GeoFencePage(),
+      SettingsPage(),
+    ];
   }
 
   @override
@@ -90,7 +109,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             _buildNavItem(Icons.add_location_outlined, 'Track', 0),
             _buildNavItem(Icons.schedule_outlined, 'Schedule', 1),
-            _buildNavItem(Icons.list_alt_rounded, 'Alarm', 2),
+            _buildNavItem(Icons.list_alt_rounded, 'AOT', 2),
             _buildNavItem(Icons.share_location_rounded, 'GeoFence', 3),
             _buildNavItem(Icons.settings_outlined, 'Settings', 4),
           ],
@@ -99,6 +118,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Build each item in the navigation bar
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isSelected = _selectedIndex == index;
     return GestureDetector(

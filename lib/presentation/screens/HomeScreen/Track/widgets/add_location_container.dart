@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../../data/data_providers/address_api_provider.dart';
+import '../../../../state_management/providers/circle_style_provider.dart';
 import '../../../../state_management/providers/radius_provider.dart';
-import '../../../../state_management/providers/circle_style_provider.dart'; // Import your provider
+import '../../../../state_management/providers/location_provider.dart';
 
 class AddLocationContainer extends StatefulWidget {
-  final LatLng? position;
   final String? title;
   final double? distance;
   final int? driveTime;
@@ -13,7 +17,6 @@ class AddLocationContainer extends StatefulWidget {
 
   const AddLocationContainer({
     Key? key,
-    this.position,
     this.title,
     this.distance,
     this.driveTime,
@@ -25,8 +28,6 @@ class AddLocationContainer extends StatefulWidget {
 }
 
 class _AddLocationContainerState extends State<AddLocationContainer> {
-  bool _onEntry = true;
-  double _radius = 1.0;
   final TextEditingController _alarmNameController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
@@ -36,8 +37,85 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
     _alarmNameController.text = widget.title ?? '';
   }
 
+  Future<void> _saveAddress() async {
+    final radiusProvider = Provider.of<RadiusProvider>(context, listen: false);
+    final circleStyleProvider =
+        Provider.of<CircleStyleProvider>(context, listen: false);
+    final locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
+
+    final alarmName = _alarmNameController.text;
+    final note = _noteController.text;
+    final radius = radiusProvider.radius;
+    final alarmRings = circleStyleProvider.isOnEntry;
+    final latitude = locationProvider.latitude;
+    final longitude = locationProvider.longitude;
+
+    Map<String, dynamic> alarm = {
+      'alarm_name': alarmName,
+      'note': note,
+      'radius': radius,
+      'alarm_rings_on_entry': alarmRings,
+      'latitude': latitude,
+      'longitude': longitude
+    };
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> alarmList = prefs.getStringList('alarms') ?? [];
+
+    alarmList.add(jsonEncode(alarm));
+
+    await prefs.setStringList('alarms', alarmList);
+
+    print('Alarm saved successfully in SharedPreferences');
+
+    widget.onSave();
+    _loadAlarms();
+
+    final addressApiProvider = AddressApiProvider();
+
+    bool success = await addressApiProvider.saveAddress(
+      alarmName: alarmName,
+      note: note,
+      radius: radius,
+      alarmRings: alarmRings,
+      latitude: latitude,
+      longitude: longitude,
+    );
+
+    if (success) {
+      // Handle success, e.g., show a success message
+      print('Address saved successfully');
+    } else {
+      // Handle failure, e.g., show an error message
+      print('Failed to save address');
+    }
+
+    widget.onSave();
+  }
+
+  Future<void> _loadAlarms() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Retrieve the list of alarms from SharedPreferences
+    List<String> alarmList = prefs.getStringList('alarms') ?? [];
+
+    // Convert each JSON string back into a Map object
+    List<Map<String, dynamic>> alarms = alarmList.map((alarmJson) {
+      return jsonDecode(alarmJson) as Map<String, dynamic>;
+    }).toList();
+
+    // Now you can use the `alarms` list in your app
+    for (var alarm in alarms) {
+      print(
+          'Loaded Alarm: ${alarm['alarm_name']}, ${alarm['note']}, ${alarm['radius']}, ${alarm['latitude']}, ${alarm['longitude']}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final circleStyleProvider = Provider.of<CircleStyleProvider>(context);
+
     return Padding(
       padding: EdgeInsets.all(10),
       child: Container(
@@ -84,7 +162,7 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '${_radius.toStringAsFixed(1)} km',
+                    '${Provider.of<RadiusProvider>(context).radius.toStringAsFixed(1)} km',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
@@ -96,41 +174,23 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text(
-                      'On entry',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
+                    title:
+                        Text('On entry', style: TextStyle(color: Colors.grey)),
                     value: true,
-                    groupValue: _onEntry,
+                    groupValue: circleStyleProvider.isOnEntry,
                     onChanged: (value) {
-                      setState(() {
-                        _onEntry = value!;
-                      });
-                      Provider.of<CircleStyleProvider>(context, listen: false)
-                          .setOnEntry(value!);
+                      circleStyleProvider.setIsOnEntry(value!);
                     },
                   ),
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text(
-                      'On Exit',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
+                    title:
+                        Text('On Exit', style: TextStyle(color: Colors.grey)),
                     value: false,
-                    groupValue: _onEntry,
+                    groupValue: circleStyleProvider.isOnEntry,
                     onChanged: (value) {
-                      setState(() {
-                        _onEntry = value!;
-                      });
-                      Provider.of<CircleStyleProvider>(context, listen: false)
-                          .setOnEntry(!value!);
+                      circleStyleProvider.setIsOnEntry(value!);
                     },
                   ),
                 ),
@@ -145,22 +205,18 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
                 overlayColor: Colors.black.withOpacity(0.2),
               ),
               child: Slider(
-                value: _radius,
+                value: Provider.of<RadiusProvider>(context).radius,
                 min: 0.0,
                 max: 10.0,
                 divisions: 100,
-                label: '${_radius.toStringAsFixed(1)} km',
+                label:
+                    '${Provider.of<RadiusProvider>(context).radius.toStringAsFixed(1)} km',
                 onChanged: (value) {
-                  setState(() {
-                    _radius = value;
-                    Provider.of<RadiusProvider>(context, listen: false)
-                        .setRadius(_radius);
-                  });
+                  Provider.of<RadiusProvider>(context, listen: false)
+                      .setRadius(value);
                 },
               ),
             ),
-
-            // Alarm Name TextField
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -180,8 +236,7 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
                   ),
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight:
-                        FontWeight.normal, // Changed to normal font weight
+                    fontWeight: FontWeight.normal, // Normal font weight
                   ),
                 ),
               ],
@@ -191,7 +246,6 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
               thickness: 0.5,
               color: Colors.grey,
             ),
-            // Add Note TextField
             SizedBox(
               height: 10,
             ),
@@ -214,8 +268,7 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
                   ),
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight:
-                        FontWeight.normal, // Changed to normal font weight
+                    fontWeight: FontWeight.normal, // Normal font weight
                   ),
                 ),
               ],
@@ -226,15 +279,12 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
               color: Colors.grey,
             ),
             SizedBox(height: 16),
-            // Aligning the buttons to the right and adding spacing between them
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
                   onPressed: () {
                     setState(() {
-                      _onEntry = true;
-                      _radius = 1.0;
                       _alarmNameController.clear();
                       _noteController.clear();
                       widget.onSave();
@@ -253,9 +303,9 @@ class _AddLocationContainerState extends State<AddLocationContainer> {
                     style: TextStyle(color: Colors.black),
                   ),
                 ),
-                SizedBox(width: 16), // Space between buttons
+                SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: widget.onSave,
+                  onPressed: _saveAddress,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     shape: RoundedRectangleBorder(

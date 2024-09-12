@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:locationalarm/data/data_providers/location_api_provider.dart';
@@ -25,5 +27,21 @@ class TrackUtils {
 
   int calculateDriveTime(double distance) {
     return (distance / 50 * 60).toInt(); // Assuming average speed 50km/h
+  }
+
+  double calculateDistanceBwPoints(double x1, double y1, double x2, double y2) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    return sqrt(dx * dx + dy * dy);
+  }
+
+  void checkIfEnteredCircle(double destinationX, double destinationY,
+      double currentX, double currentY, double radius) {
+    double distance = calculateDistanceBwPoints(
+        destinationX, destinationY, currentX, currentY);
+
+    if (distance <= radius) {
+      print('Entered the circle [][][][][][][][][]');
+    }
   }
 }

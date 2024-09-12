@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:locationalarm/presentation/state_management/providers/circle_style_provider.dart';
 import 'package:locationalarm/presentation/state_management/providers/radius_provider.dart';
+import 'package:locationalarm/presentation/state_management/providers/location_provider.dart';
+import 'package:locationalarm/data/data_providers/location_api_provider.dart'; // Add this import
 import 'package:locationalarm/routes/approutes.dart';
-import 'package:provider/provider.dart';
-// Import your route definitions
+
+import 'data/data_providers/aot_api_provider.dart'; // Import your route definitions
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
@@ -15,6 +18,15 @@ void main() {
     providers: [
       ChangeNotifierProvider(create: (_) => RadiusProvider()),
       ChangeNotifierProvider(create: (_) => CircleStyleProvider()),
+      ChangeNotifierProvider(create: (_) => LocationProvider()),
+      Provider<LocationApiProvider>(
+        // Add the LocationApiProvider here
+        create: (_) => LocationApiProvider(),
+      ),
+      Provider<AotApiProvider>(
+        // Add the AotApiProvider here
+        create: (_) => AotApiProvider(),
+      ),
     ],
     child: MyApp(),
   ));

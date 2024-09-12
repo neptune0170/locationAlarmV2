@@ -5,7 +5,7 @@ class CircleStyleProvider with ChangeNotifier {
 
   bool get isOnEntry => _isOnEntry;
 
-  void setOnEntry(bool value) {
+  void setIsOnEntry(bool value) {
     _isOnEntry = value;
     notifyListeners();
   }
