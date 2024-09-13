@@ -50,49 +50,34 @@ class AuthApiProvider {
 
       await UserPreferences.saveUserSession(sessionData);
 
-      getUserDetails();
       return responseBody;
     } else {
       return null;
     }
   }
 
-// Method to retrieve addresses
-  Future<List<Map<String, dynamic>>?> getUserDetails() async {
+  Future<Map<String, dynamic>?> getUserDetails() async {
     Map<String, dynamic>? sessionData = await UserPreferences.getUserSession();
     if (sessionData == null) {
       return null;
     }
 
-    final String token = sessionData['token'];
-
+    String token = sessionData['token'];
     final response = await http.get(
       Uri.parse('$baseUrl/users/me'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $token'
+        'Authorization': 'Bearer $token', // Assuming you're using Bearer token
       },
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> responseBody = jsonDecode(response.body);
-      List<Map<String, dynamic>> userdetails = responseBody.map((dynamic item) {
-        return {
-          'id': item['id'],
-          'fullName': item['fullName'],
-          'email': item['email'],
-          'createdAt': item['createdAt'],
-          'updatedAt': item['updatedAt'],
-          'eventId': item['eventId'],
-          'accountNonLocked': item['accountNonLocked'],
-          'username': item['username'],
-        };
-      }).toList();
-
-      print("Here in userdetails [][][][][] -" + userdetails.toString());
-      return userdetails;
+      Map<String, dynamic> userDetails = jsonDecode(response.body);
+      return userDetails; // Return user details
     } else {
-      return null;
+      print(
+          'Failed to retrieve user details. Status Code: ${response.statusCode}');
+      return null; // Return null on failure
     }
   }
 }

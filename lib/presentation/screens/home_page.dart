@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/AOT/aot_page.dart';
-import 'package:locationalarm/presentation/screens/HomeScreen/AOT/aot_tracking_page.dart';
+import 'package:locationalarm/presentation/screens/HomeScreen/AOT/aot_tracking_page.dart'; // Import AotTrackingPage
 import 'package:locationalarm/presentation/screens/HomeScreen/GeoFence/geo_fence_page.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/Schedule/schedule_page.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/Track/track_page.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/settings_page.dart';
+import 'package:geolocator/geolocator.dart';
 
-import '../../data/data_providers/auth_api_provider.dart'; // Assuming AuthApiProvider is in this path
+import '../../data/data_providers/auth_api_provider.dart'; // Import API provider
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,36 +18,28 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  int _eventId = 0; // Global variable for eventId
   Position? _currentPosition;
+  List<Widget> _widgetOptions = [];
+  bool isLoading = true; // To show a loading indicator
 
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
-    _fetchEventId(); // Fetch eventId when the app starts
+    _initializePages();
   }
 
-  // Fetch eventId from API and set it
-  Future<void> _fetchEventId() async {
-    try {
-      var userDetails = await AuthApiProvider().getUserDetails();
-      if (userDetails != null && userDetails.isNotEmpty) {
-        setState(() {
-          _eventId = userDetails[0]
-              ['eventId']; // Assuming eventId is part of user details
-        });
-      }
-    } catch (e) {
-      print('Error fetching eventId: $e');
-    }
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
-  // Get the current location
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
+    // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       print('Location services are disabled.');
@@ -64,7 +56,8 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      print('Location permissions are permanently denied.');
+      print(
+          'Location permissions are permanently denied, we cannot request permissions.');
       return;
     }
 
@@ -77,48 +70,63 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Handle navigation bar item taps
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  // Initialize pages based on eventId from the user details
+  Future<void> _initializePages() async {
+    AuthApiProvider apiProvider = AuthApiProvider(); // Instantiate API provider
+    final userDetails =
+        await apiProvider.getUserDetails(); // Fetch user details
 
-  // Conditionally return AOTPage or AotTrackingPage based on _eventId
-  List<Widget> get _widgetOptions {
-    return <Widget>[
-      TrackPage(),
-      SchedulePage(),
-      _eventId == 0 ? AotPage() : AotTrackingPage(),
-      GeoFencePage(),
-      SettingsPage(),
-    ];
+    setState(() {
+      if (userDetails != null && userDetails['eventId'] != 0) {
+        _widgetOptions = [
+          TrackPage(),
+          SchedulePage(),
+          AotTrackingPage(), // Show AotTrackingPage if eventId != 0
+          GeoFencePage(),
+          SettingsPage(),
+        ];
+      } else {
+        _widgetOptions = [
+          TrackPage(),
+          SchedulePage(),
+          AotPage(), // Show AotPage if eventId == 0
+          GeoFencePage(),
+          SettingsPage(),
+        ];
+      }
+      isLoading = false; // Pages are initialized, hide the loading indicator
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      bottomNavigationBar: Container(
-        color: Color.fromRGBO(241, 244, 249, 1),
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(Icons.add_location_outlined, 'Track', 0),
-            _buildNavItem(Icons.schedule_outlined, 'Schedule', 1),
-            _buildNavItem(Icons.list_alt_rounded, 'AOT', 2),
-            _buildNavItem(Icons.share_location_rounded, 'GeoFence', 3),
-            _buildNavItem(Icons.settings_outlined, 'Settings', 4),
-          ],
-        ),
-      ),
+      body: isLoading
+          ? Center(
+              child:
+                  CircularProgressIndicator()) // Show a loader while fetching user details
+          : Center(
+              child: _widgetOptions.elementAt(_selectedIndex),
+            ),
+      bottomNavigationBar: isLoading
+          ? SizedBox.shrink() // Hide navigation bar while loading
+          : Container(
+              color: Color.fromRGBO(241, 244, 249, 1),
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(Icons.add_location_outlined, 'Track', 0),
+                  _buildNavItem(Icons.schedule_outlined, 'Schedule', 1),
+                  _buildNavItem(Icons.list_alt_rounded, 'AOT', 2),
+                  _buildNavItem(Icons.share_location_rounded, 'GeoFence', 3),
+                  _buildNavItem(Icons.settings_outlined, 'Settings', 4),
+                ],
+              ),
+            ),
     );
   }
 
-  // Build each item in the navigation bar
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isSelected = _selectedIndex == index;
     return GestureDetector(
@@ -143,9 +151,10 @@ class _HomePageState extends State<HomePage> {
           Text(
             label,
             style: TextStyle(
-                color: Color.fromRGBO(94, 94, 94, 1),
-                fontSize: 12,
-                fontWeight: FontWeight.bold),
+              color: Color.fromRGBO(94, 94, 94, 1),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
