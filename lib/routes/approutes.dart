@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:locationalarm/presentation/screens/HomeScreen/AOT/add_member_page.dart';
 import 'package:locationalarm/presentation/screens/Login/signup_page.dart';
 import '../presentation/screens/HomeScreen/AOT/group_event.dart';
 import '../presentation/screens/HomeScreen/Settings/appearance.dart';
@@ -19,7 +20,7 @@ class Routes {
       '/appearance': (context) => Appearance(),
       '/volume': (context) => Volume(),
       '/notificationPage': (context) => NotificationPage(),
-      '/groupEvent': (context) => GroupEvent()
+      '/groupEvent': (context) => GroupEvent(),
     };
   }
 }

@@ -86,7 +86,7 @@ class AotApiProvider {
 
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/event/$eventId/event'),
+        Uri.parse('$baseUrl/event/updateEventDetails/$eventId'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
@@ -121,7 +121,7 @@ class AotApiProvider {
 
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/event/$eventId'),
+        Uri.parse('$baseUrl/event/deleteEvent/$eventId'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
@@ -177,13 +177,16 @@ class AotApiProvider {
   }
 
   // Method to add attendees to an event
-  Future<bool> addAttendee({
+  Future<Map<String, dynamic>> addAttendee({
     required int eventId,
     required List<String> emails,
   }) async {
     Map<String, dynamic>? sessionData = await UserPreferences.getUserSession();
     if (sessionData == null) {
-      return false;
+      return {
+        'statusCode': 401,
+        'message': 'Invalid session'
+      }; // Session expired
     }
 
     String token = sessionData['token'];
@@ -194,7 +197,7 @@ class AotApiProvider {
 
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/event/$eventId/attendee'),
+        Uri.parse('$baseUrl/event/addAttendee/$eventId'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
@@ -206,15 +209,31 @@ class AotApiProvider {
       print("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
-        print("Attendee(s) added successfully.");
-        return true;
+        // Success, attendee(s) added
+        return {'statusCode': 200, 'message': 'success'};
+      } else if (response.statusCode == 409) {
+        // Conflict, user already part of another event
+        return {
+          'statusCode': 409,
+          'message': 'User already part of another event'
+        };
+      } else if (response.statusCode == 404) {
+        // User not found
+        return {'statusCode': 404, 'message': 'User not found'};
+      } else if (response.statusCode == 400) {
+        // Bad request
+        return {'statusCode': 400, 'message': 'Unexpected error occurred'};
       } else {
-        print("Failed to add attendee(s): ${response.statusCode}");
-        return false;
+        // Any other failure
+        return {
+          'statusCode': response.statusCode,
+          'message': 'error: Failed with status code ${response.statusCode}'
+        };
       }
     } catch (e) {
+      // Exception occurred during the request
       print("Exception occurred: $e");
-      return false;
+      return {'statusCode': 500, 'message': 'error: Exception occurred: $e'};
     }
   }
 
@@ -236,7 +255,7 @@ class AotApiProvider {
 
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/event/$eventId/attendee'),
+        Uri.parse('$baseUrl/event/removeAttendee/$eventId'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',

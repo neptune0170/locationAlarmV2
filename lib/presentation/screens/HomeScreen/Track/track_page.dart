@@ -34,6 +34,7 @@ class _TrackPageState extends State<TrackPage> {
   int? _selectedDriveTime;
   bool _showSuggestions = false;
   bool _isAddingLocation = false;
+  bool _isDisposed = false; // Flag to check if the widget is disposed
 
   Set<Marker> _markers = {}; // Store all markers
   Set<Circle> _circles = {}; // Store all circles
@@ -56,6 +57,7 @@ class _TrackPageState extends State<TrackPage> {
 
   @override
   void dispose() {
+    _isDisposed = true; // Set the flag to true when the widget is disposed
     _searchController.removeListener(_onSearchChanged);
     _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchController.dispose();
@@ -105,9 +107,13 @@ class _TrackPageState extends State<TrackPage> {
     }
 
     _currentPosition = await Geolocator.getCurrentPosition();
-    setState(() {});
 
-    if (_currentPosition != null) {
+    if (!_isDisposed) {
+      // Check if the widget is disposed before calling setState
+      setState(() {});
+    }
+
+    if (_currentPosition != null && !_isDisposed) {
       LatLng currentLatLng =
           LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
 
@@ -126,17 +132,14 @@ class _TrackPageState extends State<TrackPage> {
 
       // Animate the camera to the current location
       mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          currentLatLng,
-          14,
-        ),
+        CameraUpdate.newLatLngZoom(currentLatLng, 14),
       );
     }
   }
 
   Future<void> _fetchAndDisplayLocations() async {
     final locations = await _addressApiProvider.getAddresses();
-    if (locations != null) {
+    if (locations != null && !_isDisposed) {
       Set<Marker> markers = locations.map((location) {
         return Marker(
           markerId: MarkerId(location['id'].toString()),
@@ -156,30 +159,31 @@ class _TrackPageState extends State<TrackPage> {
           radius: location['radius'] * 1000, // Radius in meters
           fillColor: isOnEntry
               ? Colors.white.withOpacity(0.5)
-              : Colors.black.withOpacity(0.5), // Set fill color
-          strokeColor:
-              isOnEntry ? Colors.black : Colors.white, // Set stroke color
-          strokeWidth: 2, // Circle border width
+              : Colors.black.withOpacity(0.5),
+          strokeColor: isOnEntry ? Colors.black : Colors.white,
+          strokeWidth: 2,
         );
       }).toSet();
 
       setState(() {
         _markers = _markers.union(markers);
-        _circles = circles; // Set circles to be displayed on the map
+        _circles = circles;
       });
-
-      // Trigger the build method to update the UI with address boxes.
     }
   }
 
   Future<void> _getSuggestions(String query) async {
     final suggestions = await _trackUtils.getSuggestions(query);
-    setState(() {
-      _suggestions = suggestions;
-    });
+    if (!_isDisposed) {
+      // Ensure widget is not disposed before calling setState
+      setState(() {
+        _suggestions = suggestions;
+      });
+    }
   }
 
   void _updateMap(LatLng position, String title) {
+    if (_isDisposed) return; // Prevent updates if the widget is disposed
     mapController.animateCamera(CameraUpdate.newLatLngZoom(position, 14));
     setState(() {
       _selectedPosition = position;
@@ -191,15 +195,11 @@ class _TrackPageState extends State<TrackPage> {
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       );
 
-      // Use the provider value for radius
       double radius =
           Provider.of<RadiusProvider>(context, listen: false).radius;
-
-      // Check for entry or exit from the provider or context
       bool isOnEntry =
           Provider.of<CircleStyleProvider>(context, listen: false).isOnEntry;
 
-      // Update the selected circle with the new radius
       _circles = {
         Circle(
           circleId: CircleId('selected-circle'),
@@ -217,14 +217,13 @@ class _TrackPageState extends State<TrackPage> {
       _showSuggestions = false;
     });
 
-    // Update LocationProvider with the selected location's coordinates
     Provider.of<LocationProvider>(context, listen: false)
       ..setLatitude(position.latitude)
       ..setLongitude(position.longitude);
   }
 
   Future<void> _calculateDistanceAndTime() async {
-    if (_selectedPosition != null && _currentPosition != null) {
+    if (_selectedPosition != null && _currentPosition != null && !_isDisposed) {
       final distance = _trackUtils.calculateDistance(
         LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
         _selectedPosition!,
@@ -238,6 +237,7 @@ class _TrackPageState extends State<TrackPage> {
   }
 
   void _toggleAddLocation() {
+    if (_isDisposed) return;
     setState(() {
       _isAddingLocation = !_isAddingLocation;
     });

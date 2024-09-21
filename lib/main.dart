@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:locationalarm/presentation/state_management/providers/circle_style_provider.dart';
 import 'package:locationalarm/presentation/state_management/providers/radius_provider.dart';
 import 'package:locationalarm/presentation/state_management/providers/location_provider.dart';
-import 'package:locationalarm/data/data_providers/location_api_provider.dart'; // Add this import
+import 'package:locationalarm/data/data_providers/location_api_provider.dart';
 import 'package:locationalarm/routes/approutes.dart';
 
-import 'data/data_providers/aot_api_provider.dart'; // Import your route definitions
+import 'data/data_providers/aot_api_provider.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(

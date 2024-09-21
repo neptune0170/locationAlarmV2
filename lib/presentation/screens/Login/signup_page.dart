@@ -13,27 +13,43 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     bool isObscurePassword = true;
     bool isObscureConfirmPassword = true;
+
+    // Controllers for the fields
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
     TextEditingController confirmPasswordController = TextEditingController();
+    TextEditingController fullNameController =
+        TextEditingController(); // New controller for Full Name
 
     final AuthApiProvider authApiProvider = AuthApiProvider();
+
     Future<void> signup() async {
       print("Here 4--------------------------------");
 
       final String email = emailController.text;
       final String password = passwordController.text;
-      final String fullName = "Yash Gupta";
+      final String fullName =
+          fullNameController.text; // Get full name from the controller
 
       if (passwordController.text != confirmPasswordController.text) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Passwords do not match')));
         return;
       }
-      bool success = await authApiProvider.signup(email, password, fullName);
-      print("asdfasdfasdf asdf asdfasd fasdfasd" + success.toString());
+
+      // Ensure full name is provided
+      if (fullName.isEmpty) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Full Name cannot be empty')));
+        return;
+      }
+
+      bool success = await authApiProvider.signup(
+          email, password, fullName); // Pass full name to signup
+      print("Signup success: " + success.toString());
+
       if (success) {
-        print('Here 5 -----------------------------');
+        print('Signup successful');
         Navigator.pushNamed(context, '/home');
       } else {
         ScaffoldMessenger.of(context)
@@ -58,6 +74,34 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
                 SizedBox(height: 100),
+
+                // Full Name TextField
+                TextField(
+                  controller: fullNameController, // Controller for Full Name
+                  decoration: InputDecoration(
+                    labelText: 'Full Name', // Label for Full Name
+                    labelStyle: TextStyle(
+                      color: Colors.grey, // Set the label text color to grey
+                      fontWeight: FontWeight.w500,
+                    ),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Colors.grey, // Set the underline color to grey
+                        width: 0.5, // Set the underline width to 0.5
+                      ),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Colors
+                            .black, // Set the underline color to black when focused
+                        width:
+                            0.5, // Set the underline width to 0.5 when focused
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Email TextField
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -83,6 +127,7 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
 
+                // Password TextField
                 TextField(
                   controller: passwordController,
                   obscureText: isObscurePassword,
@@ -122,6 +167,8 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                   ),
                 ),
+
+                // Confirm Password TextField
                 TextField(
                   controller: confirmPasswordController,
                   obscureText: isObscureConfirmPassword,
@@ -161,14 +208,12 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: 20,
-                ),
+
+                SizedBox(height: 20),
+
+                // Sign up Button
                 ElevatedButton(
                   onPressed: signup,
-                  //     () {
-                  //   Navigator.pushNamed(context, '/home');
-                  // },
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 60), // Full-width button
                     backgroundColor: Colors.black, // Button color
@@ -176,7 +221,9 @@ class _SignupPageState extends State<SignupPage> {
                   child: Text('Sign up',
                       style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
+
                 SizedBox(height: 8),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -185,9 +232,7 @@ class _SignupPageState extends State<SignupPage> {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: Text(
-                        'Sign in',
-                      ),
+                      child: Text('Sign in'),
                     ),
                   ],
                 ),
@@ -195,23 +240,20 @@ class _SignupPageState extends State<SignupPage> {
                 Row(
                   children: [
                     Expanded(
-                        child: Divider(
-                      thickness: 0.5,
-                      color: Colors.grey,
-                    )),
+                        child: Divider(thickness: 0.5, color: Colors.grey)),
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
                       child: Text('or',
                           style: TextStyle(color: Colors.grey, fontSize: 18)),
                     ),
                     Expanded(
-                        child: Divider(
-                      thickness: 0.5,
-                      color: Colors.grey,
-                    )),
+                        child: Divider(thickness: 0.5, color: Colors.grey)),
                   ],
                 ),
+
                 SizedBox(height: 16),
+
+                // Google Sign-in Button
                 ElevatedButton.icon(
                   onPressed: () {
                     // Add your Google sign-in functionality here
@@ -221,16 +263,16 @@ class _SignupPageState extends State<SignupPage> {
                     height: 24,
                     width: 24,
                   ),
-                  label: Text(
-                    'Continue with Google',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                  ),
+                  label: Text('Continue with Google',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w400)),
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 60), // Full-width button
                     backgroundColor: Colors.grey[200], // Button color
                     side: BorderSide(color: Colors.black), // Border color
                   ),
                 ),
+
                 SizedBox(
                     height: 100), // Adjust the height to center the content
               ],
