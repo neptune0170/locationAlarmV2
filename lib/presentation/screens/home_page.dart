@@ -75,22 +75,29 @@ class _HomePageState extends State<HomePage> {
     AuthApiProvider apiProvider = AuthApiProvider(); // Instantiate API provider
     final userDetails =
         await apiProvider.getUserDetails(); // Fetch user details
-
+    final eventId = userDetails!['eventId'];
+    final name = userDetails['fullName'];
+    final email = userDetails['email'];
+    print("Fetched values:");
+    print("eventId: $eventId");
+    print("name: $name");
+    print("email: $email");
     setState(() {
       if (userDetails != null && userDetails['eventId'] != 0) {
         _widgetOptions = [
           TrackPage(),
-          SchedulePage(),
-          AotTrackingPage(), // Show AotTrackingPage if eventId != 0
-          GeoFencePage(),
+          // SchedulePage(),
+          AotTrackingPage(eventId.toString(), name,
+              email), // Show AotTrackingPage if eventId != 0
+          // GeoFencePage(),
           SettingsPage(),
         ];
       } else {
         _widgetOptions = [
           TrackPage(),
-          SchedulePage(),
+          // SchedulePage(),
           AotPage(), // Show AotPage if eventId == 0
-          GeoFencePage(),
+          // GeoFencePage(),
           SettingsPage(),
         ];
       }
@@ -117,10 +124,10 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(Icons.add_location_outlined, 'Track', 0),
-                  _buildNavItem(Icons.schedule_outlined, 'Schedule', 1),
-                  _buildNavItem(Icons.list_alt_rounded, 'AOT', 2),
-                  _buildNavItem(Icons.share_location_rounded, 'GeoFence', 3),
-                  _buildNavItem(Icons.settings_outlined, 'Settings', 4),
+                  // _buildNavItem(Icons.schedule_outlined, 'Schedule', 1),
+                  _buildNavItem(Icons.list_alt_rounded, 'AOT', 1),
+                  // _buildNavItem(Icons.share_location_rounded, 'GeoFence', 3),
+                  _buildNavItem(Icons.settings_outlined, 'Settings', 2),
                 ],
               ),
             ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Added this for logout functionality
 
 import '../../widgets/setting_item_with_switch.dart';
 
@@ -11,15 +11,29 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  @override
   bool batteryEnabled = false;
   bool pictureInPictureEnabled = false;
 
+  Future<void> _logout() async {
+    // Clear the saved credentials in SharedPreferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // This will remove all the stored keys and values.
+
+    // Navigate back to the login page and clear the navigation stack
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/login',
+      (route) => false,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
+          // Header Section with Background Image and Title
           Container(
             height: MediaQuery.of(context).size.height * .2,
             width: MediaQuery.of(context).size.width,
@@ -30,8 +44,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.only(
-                  left: 25, top: 100), // Adjust the padding as needed
+              padding: const EdgeInsets.only(left: 25, top: 100),
               child: Text(
                 'Settings',
                 style: TextStyle(
@@ -41,10 +54,12 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
+          // Settings Items
           Expanded(
             child: ListView(
               padding: EdgeInsets.only(top: 20),
               children: [
+                // General Section
                 Padding(
                   padding: const EdgeInsets.only(left: 16),
                   child: Text(
@@ -56,56 +71,51 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 _buildSettingsItem(
-                    icon: Icons.person_add_alt,
-                    text: 'Account information',
-                    onPress: () {
-                      Navigator.pushNamed(context, '/accountInformation');
-                    }),
-                _buildSettingsItem(
-                    icon: Icons.dark_mode_outlined,
-                    text: 'Appearance',
-                    onPress: () {
-                      Navigator.pushNamed(context, '/appearance');
-                    }),
-                _buildSettingsItem(
-                    icon: Icons.volume_up_outlined,
-                    text: 'Volume',
-                    onPress: () {
-                      Navigator.pushNamed(context, '/volume');
-                    }),
-                _buildSettingsItem(
-                    icon: Icons.notification_add_outlined,
-                    text: 'Notification',
-                    onPress: () {
-                      Navigator.pushNamed(context, '/notificationPage');
-                    }),
-                SettingsItemWithSwitch(
-                  icon: Icons.picture_in_picture_alt_rounded,
-                  text: 'Picture in Picture',
-                  switchValue: pictureInPictureEnabled,
-                  onSwitchChanged: (value) {
-                    setState(() {
-                      pictureInPictureEnabled = value;
-                    });
+                  icon: Icons.person_add_alt,
+                  text: 'Account information',
+                  onPress: () {
+                    Navigator.pushNamed(context, '/accountInformation');
                   },
                 ),
-                SettingsItemWithSwitch(
-                  icon: Icons.battery_saver_rounded,
-                  text: 'Battery',
-                  switchValue: batteryEnabled,
-                  onSwitchChanged: (value) {
-                    setState(() {
-                      batteryEnabled = value;
-                    });
+                _buildSettingsItem(
+                  icon: Icons.volume_up_outlined,
+                  text: 'Volume',
+                  onPress: () {
+                    Navigator.pushNamed(context, '/volume');
                   },
                 ),
+                _buildSettingsItem(
+                  icon: Icons.notification_add_outlined,
+                  text: 'Notification',
+                  onPress: () {
+                    Navigator.pushNamed(context, '/notificationPage');
+                  },
+                ),
+                // Uncomment these if needed
+                // SettingsItemWithSwitch(
+                //   icon: Icons.picture_in_picture_alt_rounded,
+                //   text: 'Picture in Picture',
+                //   switchValue: pictureInPictureEnabled,
+                //   onSwitchChanged: (value) {
+                //     setState(() {
+                //       pictureInPictureEnabled = value;
+                //     });
+                //   },
+                // ),
+                // SettingsItemWithSwitch(
+                //   icon: Icons.battery_saver_rounded,
+                //   text: 'Battery',
+                //   switchValue: batteryEnabled,
+                //   onSwitchChanged: (value) {
+                //     setState(() {
+                //       batteryEnabled = value;
+                //     });
+                //   },
+                // ),
 
                 // Support Section
                 Padding(
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    top: 16,
-                  ),
+                  padding: const EdgeInsets.only(left: 16, top: 16),
                   child: Text(
                     'Support',
                     style: TextStyle(
@@ -115,38 +125,34 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 _buildSettingsItem(
-                    icon: Icons.report_problem_outlined,
-                    text: 'Report an Issue',
-                    onPress: () {
-                      Navigator.pushNamed(context, '/accountInformation');
-                    }),
+                  icon: Icons.report_problem_outlined,
+                  text: 'Report an Issue',
+                  onPress: () {
+                    Navigator.pushNamed(context, '/accountInformation');
+                  },
+                ),
                 _buildSettingsItem(
-                    icon: Icons.help_outline_rounded,
-                    text: 'FAQ',
-                    onPress: () {
-                      Navigator.pushNamed(context, '/accountInformation');
-                    }),
+                  icon: Icons.help_outline_rounded,
+                  text: 'FAQ',
+                  onPress: () {
+                    Navigator.pushNamed(context, '/accountInformation');
+                  },
+                ),
 
-                // Add other settings items similarly with Divider
                 // Logout Button
-                // Logout Button
-                SizedBox(height: 20), // Add some space before the button
+                SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GestureDetector(
-                    onTap: () {
-                      // Add your logout functionality here
-                    },
+                    onTap: _logout, // Call the logout function
                     child: Container(
-                      height: 60, // Button height
+                      height: 60,
                       decoration: BoxDecoration(
-                        color: Colors.white
-                            .withOpacity(0), // Transparent background
-                        borderRadius:
-                            BorderRadius.circular(40), // Fully rounded
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(40),
                         border: Border.all(
-                          color: Colors.black, // Border color
-                          width: 2, // Border width
+                          color: Colors.black,
+                          width: 2,
                         ),
                       ),
                       child: Center(
@@ -187,13 +193,13 @@ class _SettingsPageState extends State<SettingsPage> {
           onTap: onPress,
         ),
         Padding(
-          padding: const EdgeInsets.only(right: 15, left: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 15),
           child: Divider(
             height: 0.0,
             thickness: 0.5,
             color: Colors.grey,
           ),
-        )
+        ),
       ],
     );
   }

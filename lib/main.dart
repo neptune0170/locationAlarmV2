@@ -20,11 +20,9 @@ void main() {
       ChangeNotifierProvider(create: (_) => CircleStyleProvider()),
       ChangeNotifierProvider(create: (_) => LocationProvider()),
       Provider<LocationApiProvider>(
-        // Add the LocationApiProvider here
         create: (_) => LocationApiProvider(),
       ),
       Provider<AotApiProvider>(
-        // Add the AotApiProvider here
         create: (_) => AotApiProvider(),
       ),
     ],
@@ -77,7 +75,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       debugShowCheckedModeBanner: false,
-      initialRoute: '/', // Set the initial route
+      initialRoute: '/login', // Set the initial route
       routes: Routes.getRoutes(), // Use the Routes class to define routes
     );
   }

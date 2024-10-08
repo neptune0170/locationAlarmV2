@@ -1,11 +1,14 @@
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../core/preferences/user_preferences.dart';
 
 class AotApiProvider {
-  final String baseUrl =
-      'http://192.168.1.5:8080'; // Replace with your base URL
+  // local Baseurl
+  // final String baseUrl = 'http://192.168.1.5:8080';
 
+  //cloud base Url
+  final String baseUrl = 'https://locationalarm-v2-0-0.onrender.com';
   // Method to add a new event
   Future<bool> addEvent({
     required String eventName,
@@ -164,7 +167,15 @@ class AotApiProvider {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> eventDetail = jsonDecode(response.body);
-        print("Event detail: $eventDetail");
+        // Extract latitude, longitude, and location name
+        String locationName = eventDetail['locationName'] ?? '';
+        String lat = eventDetail['lat'] ?? '';
+        String lng = eventDetail['lng'] ?? '';
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('destinationLocationName', locationName);
+        await prefs.setString('destinationLatitude', lat);
+        await prefs.setString('destinationLongitude', lng);
+
         return eventDetail;
       } else {
         print("Failed to fetch event detail: ${response.statusCode}");

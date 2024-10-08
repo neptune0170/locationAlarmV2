@@ -4,7 +4,11 @@ import 'dart:convert';
 import '../../core/preferences/user_preferences.dart';
 
 class AuthApiProvider {
-  final String baseUrl = 'http://192.168.1.5:8080';
+  // local Baseurl
+  // final String baseUrl = 'http://192.168.1.5:8080';
+
+  //cloud base Url
+  final String baseUrl = 'https://locationalarm-v2-0-0.onrender.com';
 
   Future<bool> signup(String email, String password, String fullName) async {
     print("Signup initiated with email: $email");

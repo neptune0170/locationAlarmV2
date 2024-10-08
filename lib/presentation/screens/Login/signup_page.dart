@@ -49,8 +49,18 @@ class _SignupPageState extends State<SignupPage> {
       print("Signup success: " + success.toString());
 
       if (success) {
-        print('Signup successful');
-        Navigator.pushNamed(context, '/home');
+        Map<String, dynamic>? response =
+            await authApiProvider.login(email, password);
+
+        if (response != null) {
+          String token = response['token'];
+          Navigator.pushNamed(context, "/home");
+        } else {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Login failed')));
+        }
+        // print('Signup successful');
+        // Navigator.pushNamed(context, '/home');
       } else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Signup Failed')));
@@ -237,44 +247,44 @@ class _SignupPageState extends State<SignupPage> {
                   ],
                 ),
 
-                Row(
-                  children: [
-                    Expanded(
-                        child: Divider(thickness: 0.5, color: Colors.grey)),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                      child: Text('or',
-                          style: TextStyle(color: Colors.grey, fontSize: 18)),
-                    ),
-                    Expanded(
-                        child: Divider(thickness: 0.5, color: Colors.grey)),
-                  ],
-                ),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //         child: Divider(thickness: 0.5, color: Colors.grey)),
+                //     Padding(
+                //       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                //       child: Text('or',
+                //           style: TextStyle(color: Colors.grey, fontSize: 18)),
+                //     ),
+                //     Expanded(
+                //         child: Divider(thickness: 0.5, color: Colors.grey)),
+                //   ],
+                // ),
 
-                SizedBox(height: 16),
+                // SizedBox(height: 16),
 
-                // Google Sign-in Button
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Add your Google sign-in functionality here
-                  },
-                  icon: Image.asset(
-                    'assets/images/Google.png', // Ensure you have the correct path to your image
-                    height: 24,
-                    width: 24,
-                  ),
-                  label: Text('Continue with Google',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w400)),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 60), // Full-width button
-                    backgroundColor: Colors.grey[200], // Button color
-                    side: BorderSide(color: Colors.black), // Border color
-                  ),
-                ),
+                // // Google Sign-in Button
+                // ElevatedButton.icon(
+                //   onPressed: () {
+                //     // Add your Google sign-in functionality here
+                //   },
+                //   icon: Image.asset(
+                //     'assets/images/Google.png', // Ensure you have the correct path to your image
+                //     height: 24,
+                //     width: 24,
+                //   ),
+                //   label: Text('Continue with Google',
+                //       style:
+                //           TextStyle(fontSize: 16, fontWeight: FontWeight.w400)),
+                //   style: ElevatedButton.styleFrom(
+                //     minimumSize: Size(double.infinity, 60), // Full-width button
+                //     backgroundColor: Colors.grey[200], // Button color
+                //     side: BorderSide(color: Colors.black), // Border color
+                //   ),
+                // ),
 
-                SizedBox(
-                    height: 100), // Adjust the height to center the content
+                // SizedBox(
+                //     height: 100), // Adjust the height to center the content
               ],
             ),
           ),

@@ -3,7 +3,11 @@ import 'dart:convert';
 import '../../core/preferences/user_preferences.dart';
 
 class AddressApiProvider {
-  final String baseUrl = 'http://192.168.1.5:8080';
+  // local Baseurl
+  // final String baseUrl = 'http://192.168.1.5:8080';
+
+  //cloud base Url
+  final String baseUrl = 'https://locationalarm-v2-0-0.onrender.com';
 
   // Method to save an address
   Future<bool> saveAddress({

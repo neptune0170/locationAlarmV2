@@ -13,7 +13,7 @@ class Routes {
   static Map<String, WidgetBuilder> getRoutes() {
     return {
       '/': (context) => LoginPage(),
-      'logIn/': (context) => LoginPage(),
+      '/login': (context) => LoginPage(),
       '/signUp': (context) => SignupPage(),
       '/home': (context) => HomePage(),
       '/accountInformation': (context) => AccountInformation(),
