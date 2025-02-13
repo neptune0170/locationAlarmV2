@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -5,6 +7,7 @@ import 'package:locationalarm/presentation/screens/HomeScreen/Track/utils/track_
 import 'package:locationalarm/presentation/screens/HomeScreen/Track/widgets/add_location_container.dart';
 import 'package:locationalarm/presentation/screens/HomeScreen/Track/widgets/address_box.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../data/data_providers/address_api_provider.dart';
 import '../../../state_management/providers/circle_style_provider.dart';
 import '../../../state_management/providers/radius_provider.dart';
@@ -84,6 +87,58 @@ class _TrackPageState extends State<TrackPage> {
     });
   }
 
+  // Future<void> _getCurrentLocation() async {
+  //   bool serviceEnabled;
+  //   LocationPermission permission;
+
+  //   serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  //   if (!serviceEnabled) {
+  //     return Future.error('Location services are disabled.');
+  //   }
+
+  //   permission = await Geolocator.checkPermission();
+  //   if (permission == LocationPermission.denied) {
+  //     permission = await Geolocator.requestPermission();
+  //     if (permission == LocationPermission.denied) {
+  //       return Future.error('Location permissions are denied');
+  //     }
+  //   }
+
+  //   if (permission == LocationPermission.deniedForever) {
+  //     return Future.error(
+  //         'Location permissions are permanently denied, we cannot request permissions.');
+  //   }
+
+  //   _currentPosition = await Geolocator.getCurrentPosition();
+
+  //   if (!_isDisposed) {
+  //     // Check if the widget is disposed before calling setState
+  //     setState(() {});
+  //   }
+
+  //   if (_currentPosition != null && !_isDisposed) {
+  //     LatLng currentLatLng =
+  //         LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+
+  //     // Add a marker for the current location
+  //     setState(() {
+  //       _markers.add(
+  //         Marker(
+  //           markerId: MarkerId('current-location'),
+  //           position: currentLatLng,
+  //           infoWindow: InfoWindow(title: 'Current Location'),
+  //           icon:
+  //               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+  //         ),
+  //       );
+  //     });
+
+  //     // Animate the camera to the current location
+  //     mapController.animateCamera(
+  //       CameraUpdate.newLatLngZoom(currentLatLng, 14),
+  //     );
+  //   }
+  // }
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -109,26 +164,12 @@ class _TrackPageState extends State<TrackPage> {
     _currentPosition = await Geolocator.getCurrentPosition();
 
     if (!_isDisposed) {
-      // Check if the widget is disposed before calling setState
       setState(() {});
     }
 
     if (_currentPosition != null && !_isDisposed) {
       LatLng currentLatLng =
           LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-
-      // Add a marker for the current location
-      setState(() {
-        _markers.add(
-          Marker(
-            markerId: MarkerId('current-location'),
-            position: currentLatLng,
-            infoWindow: InfoWindow(title: 'Current Location'),
-            icon:
-                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-          ),
-        );
-      });
 
       // Animate the camera to the current location
       mapController.animateCamera(
@@ -236,8 +277,58 @@ class _TrackPageState extends State<TrackPage> {
     }
   }
 
+  Future<void> printAllCoordinates() async {
+    print("------------------------------------------------------------------");
+    try {
+      // Retrieve shared preferences instance
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      // Retrieve the list of alarms from SharedPreferences
+      List<String> alarmList = prefs.getStringList('alarms') ?? [];
+
+      // Check if the list is empty
+      if (alarmList.isEmpty) {
+        print('No alarms found in SharedPreferences.');
+        return;
+      }
+
+      // Iterate through each alarm and print its coordinates
+      for (String alarmJson in alarmList) {
+        Map<String, dynamic> alarm = jsonDecode(alarmJson);
+        double latitude = alarm['latitude'];
+        double longitude = alarm['longitude'];
+        print('Alarm Location - Latitude: $latitude, Longitude: $longitude');
+      }
+    } catch (e) {
+      print('Error while printing coordinates: $e');
+    }
+    print("------------------------------------------------------------------");
+  }
+
+  Future<void> _refreshCircles() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> alarmList = prefs.getStringList('alarms') ?? [];
+
+    Set<Circle> updatedCircles = alarmList.map((alarmJson) {
+      Map<String, dynamic> alarm = jsonDecode(alarmJson);
+      return Circle(
+        circleId: CircleId(alarm['alarm_name']),
+        center: LatLng(alarm['latitude'], alarm['longitude']),
+        radius: alarm['radius'] * 1000,
+        fillColor: Colors.black.withOpacity(0.5),
+        strokeColor: Colors.white,
+        strokeWidth: 2,
+      );
+    }).toSet();
+
+    setState(() {
+      _circles = updatedCircles;
+    });
+  }
+
   void _toggleAddLocation() {
     if (_isDisposed) return;
+    printAllCoordinates();
     setState(() {
       _isAddingLocation = !_isAddingLocation;
     });
@@ -258,6 +349,30 @@ class _TrackPageState extends State<TrackPage> {
                 child: Consumer2<RadiusProvider, CircleStyleProvider>(
                   builder:
                       (context, radiusProvider, circleStyleProvider, child) {
+                    // return GoogleMap(
+                    //   onMapCreated: (controller) {
+                    //     mapController = controller;
+                    //   },
+                    //   initialCameraPosition: CameraPosition(
+                    //     target: _currentPosition != null
+                    //         ? LatLng(_currentPosition!.latitude,
+                    //             _currentPosition!.longitude)
+                    //         : LatLng(0,
+                    //             0), // Default to (0, 0) if location is not available yet
+                    //     zoom: 14,
+                    //   ),
+                    //   markers: _markers.union(
+                    //     _selectedMarker != null ? {_selectedMarker!} : {},
+                    //   ), // Combine markers from database and selected marker
+                    //   circles: _circles, // Display all circles on the map
+                    //   onCameraMove: (CameraPosition position) {
+                    //     if (_selectedPosition != null) {
+                    //       setState(() {
+                    //         // To force rebuild and reposition the address box
+                    //       });
+                    //     }
+                    //   },
+                    // );
                     return GoogleMap(
                       onMapCreated: (controller) {
                         mapController = controller;
@@ -274,6 +389,9 @@ class _TrackPageState extends State<TrackPage> {
                         _selectedMarker != null ? {_selectedMarker!} : {},
                       ), // Combine markers from database and selected marker
                       circles: _circles, // Display all circles on the map
+                      myLocationEnabled: true, // Enables the blue location dot
+                      myLocationButtonEnabled:
+                          true, // Enables the default location button
                       onCameraMove: (CameraPosition position) {
                         if (_selectedPosition != null) {
                           setState(() {

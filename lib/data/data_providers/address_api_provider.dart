@@ -4,20 +4,20 @@ import '../../core/preferences/user_preferences.dart';
 
 class AddressApiProvider {
   // local Baseurl
-  // final String baseUrl = 'http://192.168.1.5:8080';
-
+  final String baseUrl = 'http://192.168.1.7:8080';
+  // final String baseUrl = 'http://192.168.85.1:8080';
   //cloud base Url
-  final String baseUrl = 'https://locationalarm-v2-0-0.onrender.com';
+  // final String baseUrl = 'https://locationalarm-v2-0-0.onrender.com';
 
   // Method to save an address
-  Future<bool> saveAddress({
-    required String alarmName,
-    required String note,
-    required double radius,
-    required bool alarmRings,
-    required double latitude,
-    required double longitude,
-  }) async {
+  Future<bool> saveAddress(
+      {required String alarmName,
+      required String note,
+      required double radius,
+      required bool alarmRings,
+      required double latitude,
+      required double longitude,
+      required String alarmId}) async {
     Map<String, dynamic>? sessionData = await UserPreferences.getUserSession();
     if (sessionData == null) {
       return false;
@@ -34,7 +34,15 @@ class AddressApiProvider {
       'alarmRings': alarmRings,
       'latitude': latitude,
       'longitude': longitude,
+      'alarmId': alarmId
     };
+
+    print("==========================================");
+
+    print("AlarmID " + alarmId);
+    print(alarmName);
+
+    print("==========================================");
 
     try {
       final response = await http.post(
@@ -101,6 +109,40 @@ class AddressApiProvider {
       return addresses;
     } else {
       return null;
+    }
+  }
+
+  // **New Method to Delete a Track Location**
+  Future<bool> deleteAddress(String addressId) async {
+    Map<String, dynamic>? sessionData = await UserPreferences.getUserSession();
+    if (sessionData == null) {
+      return false;
+    }
+
+    final String token = sessionData['token'];
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/track-location/delete/$addressId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token'
+        },
+      );
+
+      print("Delete Response Status: ${response.statusCode}");
+      print("Delete Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        print("Address deleted successfully.");
+        return true;
+      } else {
+        print("Failed to delete address: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      print("Exception occurred while deleting: $e");
+      return false;
     }
   }
 }

@@ -324,7 +324,7 @@ class _AotPageState extends State<AotPage> {
               zoom: 14.0,
             ),
             myLocationEnabled: true,
-            myLocationButtonEnabled: false,
+            // myLocationButtonEnabled: true,
           ),
           if (_isEventBoxVisible)
             Positioned(

@@ -151,7 +151,7 @@ class _AotTrackingPageState extends State<AotTrackingPage> {
                 points: polylineCoordinates,
                 color: color,
                 width: 5,
-                zIndex: 1, // Ensure polylines are below markers
+                zIndex: 1,
               ),
             );
           });
