@@ -6,6 +6,7 @@ class CircleStyleProvider with ChangeNotifier {
   bool get isOnEntry => _isOnEntry;
 
   void setIsOnEntry(bool value) {
+    print("Value chagged=====================================================");
     _isOnEntry = value;
     notifyListeners();
   }

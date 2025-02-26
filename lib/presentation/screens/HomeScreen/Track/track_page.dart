@@ -51,6 +51,11 @@ class _TrackPageState extends State<TrackPage> {
     _fetchAndDisplayLocations(); // Fetch and display locations on page load
 
     // Listen to RadiusProvider changes
+    Provider.of<CircleStyleProvider>(context, listen: false).addListener(() {
+      if (_selectedPosition != null) {
+        _updateMap(_selectedPosition!, _selectedTitle ?? '');
+      }
+    });
     Provider.of<RadiusProvider>(context, listen: false).addListener(() {
       if (_selectedPosition != null) {
         _updateMap(_selectedPosition!, _selectedTitle ?? '');
@@ -87,58 +92,6 @@ class _TrackPageState extends State<TrackPage> {
     });
   }
 
-  // Future<void> _getCurrentLocation() async {
-  //   bool serviceEnabled;
-  //   LocationPermission permission;
-
-  //   serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  //   if (!serviceEnabled) {
-  //     return Future.error('Location services are disabled.');
-  //   }
-
-  //   permission = await Geolocator.checkPermission();
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //     if (permission == LocationPermission.denied) {
-  //       return Future.error('Location permissions are denied');
-  //     }
-  //   }
-
-  //   if (permission == LocationPermission.deniedForever) {
-  //     return Future.error(
-  //         'Location permissions are permanently denied, we cannot request permissions.');
-  //   }
-
-  //   _currentPosition = await Geolocator.getCurrentPosition();
-
-  //   if (!_isDisposed) {
-  //     // Check if the widget is disposed before calling setState
-  //     setState(() {});
-  //   }
-
-  //   if (_currentPosition != null && !_isDisposed) {
-  //     LatLng currentLatLng =
-  //         LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-
-  //     // Add a marker for the current location
-  //     setState(() {
-  //       _markers.add(
-  //         Marker(
-  //           markerId: MarkerId('current-location'),
-  //           position: currentLatLng,
-  //           infoWindow: InfoWindow(title: 'Current Location'),
-  //           icon:
-  //               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-  //         ),
-  //       );
-  //     });
-
-  //     // Animate the camera to the current location
-  //     mapController.animateCamera(
-  //       CameraUpdate.newLatLngZoom(currentLatLng, 14),
-  //     );
-  //   }
-  // }
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -193,15 +146,16 @@ class _TrackPageState extends State<TrackPage> {
       }).toSet();
 
       Set<Circle> circles = locations.map((location) {
-        bool isOnEntry = location['alarmRings'] == 1;
+        bool isOnEntry = location['alarmRings'];
+
         return Circle(
           circleId: CircleId(location['id'].toString()),
           center: LatLng(location['latitude'], location['longitude']),
           radius: location['radius'] * 1000, // Radius in meters
           fillColor: isOnEntry
-              ? Colors.white.withOpacity(0.5)
-              : Colors.black.withOpacity(0.5),
-          strokeColor: isOnEntry ? Colors.black : Colors.white,
+              ? Colors.black.withOpacity(0.5)
+              : Colors.white.withOpacity(0.5),
+          strokeColor: isOnEntry ? Colors.white : Colors.black,
           strokeWidth: 2,
         );
       }).toSet();
@@ -216,7 +170,6 @@ class _TrackPageState extends State<TrackPage> {
   Future<void> _getSuggestions(String query) async {
     final suggestions = await _trackUtils.getSuggestions(query);
     if (!_isDisposed) {
-      // Ensure widget is not disposed before calling setState
       setState(() {
         _suggestions = suggestions;
       });
@@ -224,7 +177,7 @@ class _TrackPageState extends State<TrackPage> {
   }
 
   void _updateMap(LatLng position, String title) {
-    if (_isDisposed) return; // Prevent updates if the widget is disposed
+    if (_isDisposed) return;
     mapController.animateCamera(CameraUpdate.newLatLngZoom(position, 14));
     setState(() {
       _selectedPosition = position;
@@ -241,11 +194,15 @@ class _TrackPageState extends State<TrackPage> {
       bool isOnEntry =
           Provider.of<CircleStyleProvider>(context, listen: false).isOnEntry;
 
+      print("Sdfffsfsdfsfdsfdsdfsdfdsfsdfds");
+      print(radius);
+      print(isOnEntry);
+
       _circles = {
         Circle(
           circleId: CircleId('selected-circle'),
           center: _selectedPosition!,
-          radius: radius * 1000, // Use the provider's radius
+          radius: radius * 1000,
           fillColor: isOnEntry
               ? Colors.black.withOpacity(0.5)
               : Colors.white.withOpacity(0.5),
@@ -334,6 +291,46 @@ class _TrackPageState extends State<TrackPage> {
     });
   }
 
+  void _onLongPress(LatLng position) {
+    if (_isDisposed) return;
+
+    setState(() {
+      _selectedPosition = position;
+      _selectedTitle = "Lat: ${position.latitude}, Lng: ${position.longitude}";
+
+      _selectedMarker = Marker(
+        markerId: MarkerId('selected-location'),
+        position: position,
+        infoWindow: InfoWindow(title: _selectedTitle),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      );
+
+      double radius =
+          Provider.of<RadiusProvider>(context, listen: false).radius;
+      bool isOnEntry =
+          Provider.of<CircleStyleProvider>(context, listen: false).isOnEntry;
+
+      _circles = {
+        Circle(
+          circleId: CircleId('selected-circle'),
+          center: _selectedPosition!,
+          radius: radius * 1000, // Use the provider's radius
+          fillColor: isOnEntry
+              ? Colors.black.withOpacity(0.5)
+              : Colors.white.withOpacity(0.5),
+          strokeColor: isOnEntry ? Colors.white : Colors.black,
+          strokeWidth: 2,
+        ),
+      };
+
+      _isAddingLocation = true; // Show the Add Location button
+    });
+
+    Provider.of<LocationProvider>(context, listen: false)
+      ..setLatitude(position.latitude)
+      ..setLongitude(position.longitude);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -349,30 +346,6 @@ class _TrackPageState extends State<TrackPage> {
                 child: Consumer2<RadiusProvider, CircleStyleProvider>(
                   builder:
                       (context, radiusProvider, circleStyleProvider, child) {
-                    // return GoogleMap(
-                    //   onMapCreated: (controller) {
-                    //     mapController = controller;
-                    //   },
-                    //   initialCameraPosition: CameraPosition(
-                    //     target: _currentPosition != null
-                    //         ? LatLng(_currentPosition!.latitude,
-                    //             _currentPosition!.longitude)
-                    //         : LatLng(0,
-                    //             0), // Default to (0, 0) if location is not available yet
-                    //     zoom: 14,
-                    //   ),
-                    //   markers: _markers.union(
-                    //     _selectedMarker != null ? {_selectedMarker!} : {},
-                    //   ), // Combine markers from database and selected marker
-                    //   circles: _circles, // Display all circles on the map
-                    //   onCameraMove: (CameraPosition position) {
-                    //     if (_selectedPosition != null) {
-                    //       setState(() {
-                    //         // To force rebuild and reposition the address box
-                    //       });
-                    //     }
-                    //   },
-                    // );
                     return GoogleMap(
                       onMapCreated: (controller) {
                         mapController = controller;
@@ -381,23 +354,21 @@ class _TrackPageState extends State<TrackPage> {
                         target: _currentPosition != null
                             ? LatLng(_currentPosition!.latitude,
                                 _currentPosition!.longitude)
-                            : LatLng(0,
-                                0), // Default to (0, 0) if location is not available yet
+                            : LatLng(0, 0),
                         zoom: 14,
                       ),
                       markers: _markers.union(
                         _selectedMarker != null ? {_selectedMarker!} : {},
-                      ), // Combine markers from database and selected marker
-                      circles: _circles, // Display all circles on the map
+                      ),
+
+                      onLongPress: _onLongPress,
+
+                      circles: _circles,
                       myLocationEnabled: true, // Enables the blue location dot
                       myLocationButtonEnabled:
                           true, // Enables the default location button
                       onCameraMove: (CameraPosition position) {
-                        if (_selectedPosition != null) {
-                          setState(() {
-                            // To force rebuild and reposition the address box
-                          });
-                        }
+                        setState(() {});
                       },
                     );
                   },
@@ -405,6 +376,41 @@ class _TrackPageState extends State<TrackPage> {
               ),
             ),
           ),
+          ..._markers
+              .map((marker) => FutureBuilder<ScreenCoordinate>(
+                    future: mapController.getScreenCoordinate(marker.position),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        final screenPosition = snapshot.data!;
+                        final pixelRatio =
+                            MediaQuery.of(context).devicePixelRatio;
+
+                        // Calculate distance and time for each marker
+                        double? distance;
+                        int? driveTime;
+                        if (_currentPosition != null) {
+                          distance = _trackUtils.calculateDistance(
+                            LatLng(_currentPosition!.latitude,
+                                _currentPosition!.longitude),
+                            marker.position,
+                          );
+                          driveTime = _trackUtils.calculateDriveTime(distance);
+                        }
+
+                        return Positioned(
+                          left: screenPosition.x / pixelRatio - 100,
+                          top: screenPosition.y / pixelRatio - 120,
+                          child: AddressBox(
+                            title: marker.infoWindow.title,
+                            distance: distance,
+                            driveTime: driveTime,
+                          ),
+                        );
+                      }
+                      return Container();
+                    },
+                  ))
+              .toList(),
           if (_selectedPosition != null)
             FutureBuilder<ScreenCoordinate>(
               future: mapController.getScreenCoordinate(_selectedPosition!),
