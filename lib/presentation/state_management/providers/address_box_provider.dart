@@ -21,7 +21,7 @@ class AddressBoxProvider with ChangeNotifier {
 
   Future<String> _getAddressFromLatLng(LatLng position) async {
     final String googleApiKey =
-        'AIzaSyAeLI09lwxkb-j_c5I4QEJJuOr-JPgQIw4'; // Replace with your Google API key
+        "Your API Key"; // Replace with your Google API key
     final String url =
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$googleApiKey';
     final response = await http.get(Uri.parse(url));

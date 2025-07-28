@@ -32,7 +32,7 @@
 //   WebSocketChannel? _channel; // Nullable to handle disconnection cases
 //   late Timer _timer;
 //   String googleApiKey =
-//       'AIzaSyAeLI09lwxkb-j_c5I4QEJJuOr-JPgQIw4'; // Replace with your Google API key
+//       'Your API KEY" // Replace with your Google API key
 
 //   // Track address box data for each user marker
 //   final Map<String, Map<String, dynamic>> _addressBoxData = {};
@@ -450,8 +450,8 @@ class _AotTrackingPageState extends State<AotTrackingPage> {
   LatLng? _myPosition; // Holds the user's current position
   WebSocketChannel? _channel; // Nullable to handle disconnection cases
   late Timer _timer;
-  String googleApiKey =
-      'AIzaSyAeLI09lwxkb-j_c5I4QEJJuOr-JPgQIw4'; // Replace with your Google API key
+  String googleApiKey = 'Your API KEY';
+  // Replace with your Google API key
   bool _isBackgroundLocationSharingActive = false;
 
   // Track address box data for each user marker
